@@ -1,0 +1,44 @@
+package webcollector;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import webcollector.jsoupdemo;
+
+public class WriteInDB {	
+	public Connection getConnection() throws ClassNotFoundException, SQLException{
+		Class.forName("com.mysql.jdbc.Driver");
+		Connection con = DriverManager.getConnection("jdbc:mysql://localhost/crawl?characterEncoding=utf8&useSSL=true","root","12345");
+		return con;
+	}	
+	public static void writeInDB_xincailiao(String title_s,String author_s,String summary_s,String postdate_s,String content_s,String source_s,String picUrl_s) throws ClassNotFoundException, SQLException{
+		WriteInDB c = new WriteInDB();
+		Connection con = c.getConnection();
+		PreparedStatement sql;
+		sql = con.prepareStatement("Insert into xincailiao(title,author,summary,postDate,content,source,picUrl) value('"+title_s+"','"+author_s+"','"+summary_s+"','"+postdate_s+"','"+content_s+"','"+source_s+"','"+picUrl_s+"')");
+		sql.executeUpdate();
+		}
+/*	public static void writeInDB_xincailiaoPic(String picurl_s) throws ClassNotFoundException, SQLException{
+	    WriteInDB c = new WriteInDB();
+	    Connection con = c.getConnection();
+	    PreparedStatement sql;
+	    sql = con.prepareStatement("Insert into xincailiao(picUrl) value('"+picurl_s+"')");
+	    sql.executeUpdate();
+	}*/
+	public static void writeInDB_techcrunch(String title_s,String content_s) throws ClassNotFoundException, SQLException{
+		WriteInDB c = new WriteInDB();
+		Connection con = c.getConnection();
+		PreparedStatement sql;
+		sql = con.prepareStatement("Insert into techcrunch(title, content) value('"+title_s+"','"+content_s+"')");
+		sql.executeUpdate();
+		}
+	public static void writeInDB_36kr(String title_s,String content_s) throws ClassNotFoundException, SQLException{
+		WriteInDB c = new WriteInDB();
+		Connection con = c.getConnection();
+		PreparedStatement sql;
+		sql = con.prepareStatement("Insert into 36kr(title, content) value('"+title_s+"','"+content_s+"')");
+		sql.executeUpdate();
+		}
+	}

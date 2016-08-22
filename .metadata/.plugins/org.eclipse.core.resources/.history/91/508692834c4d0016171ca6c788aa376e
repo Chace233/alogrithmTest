@@ -1,0 +1,13 @@
+package webcollector;
+
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class oschinaCrawler extends BreadthCrawler{
+
+	public oschinaCrawler(String crawlPath, boolean autoParse) {
+		super(crawlPath, autoParse);
+		
+		this.addSeed("http://www.oschina.net/blog");
+	}
+
+}

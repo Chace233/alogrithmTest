@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Move element &apos;adafruitCrawler.java&apos; to &apos;mycollector/src/webcollector&apos;&#x0D;&#x0A;- Original project: &apos;webcollector&apos;&#x0D;&#x0A;- Destination element: &apos;mycollector/src/webcollector&apos;&#x0D;&#x0A;- Original element: &apos;webcollector.adafruitCrawler.java&apos;&#x0D;&#x0A;- Update references to refactored element" description="Move compilation unit" destination="=mycollector/src&lt;webcollector" element1="/src&lt;webcollector{adafruitCrawler.java" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.move" patterns="*" policy="org.eclipse.jdt.ui.moveResources" qualified="false" references="true" stamp="1469346283455" units="1" version="1.0"/>
+</session>

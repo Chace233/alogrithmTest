@@ -1,0 +1,55 @@
+package webcollector;
+
+import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class test01 extends BreadthCrawler{
+
+	File downloadDir;
+	AtomicInteger imageId;
+	
+	public test01(String crawlPath, boolean autoParse) {
+		super(crawlPath, autoParse);
+		
+		downloadDir = new File(crawlPath);
+		if(!downloadDir.exists()){
+			downloadDir.mkdir();
+		}
+		cmputeImageId();
+		
+		this.addSeed("http://www.xincailiao.com/index.html");
+		this.addRegex("http://www.xincailiao.com/html/.*html");
+	    this.addRegex("-.*#.*");
+	}
+
+	private void cmputeImageId() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(Page page, CrawlDatums next) {
+		String url = page.getUrl();
+		System.out.println("URL:  "+url);
+		if(page.matchUrl("http://www.xincailiao.com/.*html")){
+			String title = page.select("strong").text();
+			System.out.println("title: "+title);
+			String content = page.select("div.list1_detail2").text();
+			System.out.println("content: "+content);
+			
+		}
+	}
+	
+	
+	
+	public static void main(String[] args) throws Exception{
+		test01 crawler = new test01("crawl", true);
+	    crawler.setThreads(50);
+	    crawler.setTopN(100);
+	    crawler.start(4);
+	}
+}

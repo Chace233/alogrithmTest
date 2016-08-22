@@ -1,0 +1,35 @@
+package webcollector;
+
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class xincailiaoCrawler extends BreadthCrawler{
+
+	public xincailiaoCrawler(String crawlPath, boolean autoParse) {
+		super(crawlPath, autoParse);
+		
+		this.addSeed("http://www.xincailiao.com/index.html");
+		this.addRegex("http://www.xincailiao.com/html/weizixun/xinxinggongnencailiao/2016/0718/8339.html");
+	    this.addRegex("-.*\\.(jpg|png|gif).*");
+	    this.addRegex("-.*#.*");
+	}
+
+	@Override
+	public void visit(Page page, CrawlDatums next) {
+		String url = page.getUrl();
+		System.out.println("URL:  "+url);
+		if(page.matchUrl("http://www.xincailiao.com/html/weizixun/xinxinggongnencailiao/2016/0718/8339.html")){
+			                      // http://www.xincailiao.com/html/weizixun/xianjinjiegoucailiao/2016/0715/8336.html
+			String title = page.select("strong").text();
+			System.out.println("title: "+title);
+		}
+	}
+	
+	public static void main(String[] args) throws Exception{
+		xincailiaoCrawler crawler = new xincailiaoCrawler("crawl", true);
+	    crawler.setThreads(50);
+	    crawler.setTopN(100);
+	    crawler.start(4);
+	}
+}

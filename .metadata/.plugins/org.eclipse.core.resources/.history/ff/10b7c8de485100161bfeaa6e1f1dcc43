@@ -1,0 +1,68 @@
+package webcollector;		
+
+
+import java.io.IOException;
+import java.util.ArrayList;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class KrCrawler2 extends BreadthCrawler {
+    public KrCrawler2(String crawlPath, boolean autoParse) {
+	    super(crawlPath, autoParse);
+	   
+    }
+
+    @Override
+    public void visit(Page page, CrawlDatums next) {       
+    	String list = Functions.getJsonPart(page.getHtml());
+    	//System.out.println("#### "+list);
+    /*	for(int i = 0; i<list.size();i++){
+    		System.out.println(list.get(i));
+    	}*/
+    	/*for(String url : list){
+    		try {
+				JsoupConnect(url);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}*/
+    }
+    
+    public void JsoupConnect(String url) throws IOException{
+    	Document doc = null;
+    	String res = htmlunitTest.preloading(url);
+    	doc = Jsoup.parse(res);
+    	String title = doc.select("h1").text();
+    	System.out.println("title: "+title);
+    	String auther = doc.select("span.name").text();
+    	System.out.println("auther: "+auther);
+    	Elements imgs = doc.select("div[class=mobile_article] img"); 
+    	for(Element img : imgs){
+    		String src = img.attr("src");
+    		if(Functions.RegexUrl(src, "http://.*heading")){  //判断是否是文章内的图片（文章内的图片都是以!heading结尾）
+    			Functions.downloadImg(src);
+    		}
+    	}
+    }
+    
+
+  
+    
+    public static void main(String[] args) throws Exception {
+    	KrCrawler2 crawler = new KrCrawler2("crawl", true);
+    	crawler.addSeed("http://36kr.com/news");
+    	crawler.addRegex("http://36kr.com/p/.*html");
+    	crawler.addRegex("-.*\\.(jpg|png|gif).*");
+    	crawler.addRegex("-.*#.*");
+	    crawler.setThreads(50);
+	    crawler.setTopN(20);
+	    crawler.start(4);
+    }
+
+}
+

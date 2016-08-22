@@ -1,0 +1,90 @@
+package webcollector;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class adafruitCrawler extends BreadthCrawler{
+
+	public adafruitCrawler(String crawlPath, boolean autoParse) {
+		super(crawlPath, autoParse);
+		
+	}
+
+	@Override
+	public void visit(Page page, CrawlDatums next) {
+		ArrayList<String> list = getUrl(page);
+		for(int i = 0; i < list.size(); i++){
+			try {
+				//crawlerOnePage.onePage(list.get(i));
+				crawlerOnePage(list.get(i));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public ArrayList<String> getUrl(Page page){
+		ArrayList<String> list = new ArrayList<String>();
+		Document doc = page.getDoc();
+		Elements as = doc.select("div[id=productListing] a");
+		for(Element a : as){
+			String c = a.attr("href");
+			if(isUrl(c, "/products/[0-9]+")){
+				String href = "https://www.adafruit.com"+c;
+				if(!list.contains(href))
+					list.add(href);
+			}
+		}
+		return list;
+	}
+	
+	public boolean isUrl(String href, String regex){
+		Pattern p = Pattern.compile(regex);
+		Matcher m = p.matcher(href);
+		if(m.find()){
+			return true;
+		}
+		return false;
+	}
+	
+	public void crawlerOnePage(String url) throws IOException{
+		Document doc = Jsoup.connect(url).timeout(100000).userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31").get();
+		downloadImg(doc);
+		String name = doc.select("div[id=prod-right-side] h1").text();
+		System.out.println("##name: "+name);
+	}
+	
+
+	
+	public void downloadImg(Document doc) throws IOException{
+		Elements  as = doc.select("div[id=prod-primary-img-container]");
+		for(Element a : as){
+			Elements imgs = a.select("img");
+			for(Element img : imgs){
+				String src = img.attr("src");
+				Functions.downloadImg(src);
+			}
+		}
+	}
+	
+	public static void main(String[] args) throws Exception{
+		adafruitCrawler crawler = new adafruitCrawler("crawler", true);
+		crawler.addSeed("https://www.adafruit.com/category/35");
+		crawler.addRegex("https://www.adafruit.com/products/[0-9]+");
+		crawler.setThreads(50);
+	    crawler.setTopN(100);
+	    crawler.start(1);
+	}
+	
+}

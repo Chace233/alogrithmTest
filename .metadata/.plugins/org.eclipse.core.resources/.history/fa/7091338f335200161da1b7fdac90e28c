@@ -1,0 +1,10 @@
+package webcollector;
+
+public class HttpRequest {
+
+	public static String sendGet(String url, String b_id){
+		String result = "";
+		String GetUrl = "http://36kr.com/api/info-flow/main_site/posts?column_id=&b_id="+b_id+"&per_page=20";
+		return result;
+	}
+}

@@ -1,0 +1,112 @@
+package webcollector;		
+
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class KrCrawler extends BreadthCrawler {
+    public KrCrawler(String crawlPath, boolean autoParse) {
+	    super(crawlPath, autoParse);
+	   
+    }
+
+    @Override
+    public void visit(Page page, CrawlDatums next) {       
+	ArrayList<String> list = Functions.getUrls(page.getHtml(), "http://36kr.com/p/.*?html");
+    	
+    	//参数的意义依次是，当前的URL，当前获取到的列表，需要点击加载跟多次数
+    	//没有改动太多就加了个函数
+    	//解释下函数的意思，有些网站会做爬虫的防止，短时间大量访问会封IP之类的。
+    	//Functions.MAX_CLICK_TIMES 最大点击加载更多的次数，默认32，按需设置
+    	//Functions.ENABLE_AJAX_SLEEP 是否模拟点击睡眠，默认false，按需设置
+    	//Functions.AJAX_SLEEP_TIME  每次模拟点击睡眠时长，默认10ms，单位ms，按需更改
+    	Functions.patcOf36Kr(page.getUrl(), list, 12);
+    	
+    	System.out.println("###size: "+list.size());
+    	for(String li : list){
+    		System.out.println(li);
+    		try {
+				JsoupConnect(li);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+    	}
+    }
+    
+    public void JsoupConnect(String url) throws IOException, ParseException{
+    	System.out.println("###URL: "+url);
+    	Document doc = null;
+    	String res = getHtmlAfterJSAction(url);
+    	doc = Jsoup.parse(res); 
+    	
+    	if(!Functions.isInOneWeek(doc)) {
+    		System.out.println("不再一周内");
+    		return;
+    	}
+    	String title = doc.select("h1").text();
+    	System.out.println("title: "+title);
+    	String auther = doc.select("span.name").text();
+    	System.out.println("auther: "+auther);
+    	Elements imgs = doc.select("section[class=headimg] img"); 
+    	for(Element img : imgs){
+    		String src = img.attr("src");
+    		if(Functions.RegexUrl(src, "(http|https)://.*!heading")){  //判断是否是文章内的图片（文章内的图片都是以!heading结尾）
+    			//System.out.println("------src: "+src);
+    			Functions.downloadImg(src);
+    		}
+    	}
+    }
+    
+    public String getHtmlAfterJSAction(String url){
+    	//使用火狐v45版的内核
+    	final WebClient webClient=new WebClient(BrowserVersion.FIREFOX_38);
+    	//禁止CSS，看情况打开
+    	webClient.getOptions().setCssEnabled(false);
+    	//允许执行JS
+    	webClient.getOptions().setJavaScriptEnabled(true);
+    	//JS容错函数
+    	webClient.getOptions().setThrowExceptionOnScriptError(false);
+    	HtmlPage page = null;
+    	try {
+        	page=webClient.getPage(url);
+		} catch (Exception e) {
+			System.out.println("竟然有Bug,快通知站长修复Bug");
+		}
+    	if(page != null){
+        	//System.out.println(page.asText());
+        	//System.out.println(page.asXml());//这是网页的源码
+    		return page.asXml();
+    	}
+    	return null;
+    }
+    
+    public static void main(String[] args) throws Exception {
+    	KrCrawler crawler = new KrCrawler("crawl", true);
+    	crawler.addSeed("http://36kr.com/news");
+    	crawler.addRegex("http://36kr.com/p/.*html");
+    	crawler.addRegex("-.*\\.(jpg|png|gif).*");
+    	crawler.addRegex("-.*#.*");
+	    crawler.setThreads(50);
+	    crawler.setTopN(20);
+	    crawler.start(1);
+    }
+
+}
+

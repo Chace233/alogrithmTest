@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy element &apos;DemoImageCrawler.java&apos; to &apos;webcollector/src&apos;&#x0D;&#x0A;- Original project: &apos;ImageSpider&apos;&#x0D;&#x0A;- Destination element: &apos;webcollector/src&apos;&#x0D;&#x0A;- Original element: &apos;cn.edu.hfut.dmic.webcollector.example.DemoImageCrawler.java&apos;" description="Copy compilation unit" destination="=webcollector/src" element1="/src&lt;cn.edu.hfut.dmic.webcollector.example{DemoImageCrawler.java" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyResources" stamp="1468997094407" units="1" version="1.0"/>
+</session>

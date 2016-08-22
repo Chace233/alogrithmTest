@@ -1,0 +1,22 @@
+package webcollector;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+
+public class jsoupdemo {
+	public static void main(String[] args) throws Exception{
+		Document doc = Jsoup.connect("http://36kr.com/p/5049721 ").get();
+		Elements els = (Elements) doc.select("script");
+		for(org.jsoup.nodes.Element el: els){
+			String elString = el.toString();
+/*			String content = "";
+			if(elString.contains("props"))
+			{
+				content = elString.substring(elString.indexOf("content")+10,elString.indexOf("cover")-3);
+			}*/
+			System.out.println(elString);
+		}
+	}
+
+}

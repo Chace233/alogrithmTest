@@ -1,0 +1,92 @@
+package webcollector;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+import cn.edu.hfut.dmic.webcollector.util.Config;
+import cn.edu.hfut.dmic.webcollector.util.FileUtils;
+
+public class test01 extends BreadthCrawler{
+
+	File downloadDir;
+	AtomicInteger imageId;
+	
+	public test01(String crawlPath, String downloadPath) {
+		super(crawlPath, autoParse);
+		
+		downloadDir = new File(crawlPath);
+		if(!downloadDir.exists()){
+			downloadDir.mkdir();
+		}
+		computeImageId();
+	}
+	
+
+
+
+	@Override
+	public void visit(Page page, CrawlDatums next) {
+		String url = page.getUrl();
+		System.out.println("URL:  "+url);
+		if(page.matchUrl("http://www.xincailiao.com/.*html")){
+			String contentType = page.getResponse().getContentType();
+	
+			String title = page.select("strong").text();
+			System.out.println("title: "+title);
+			String content = page.select("div.list1_detail2").text();
+			System.out.println("content: "+content);
+			if(contentType == null){
+				return;
+			}else if(contentType.contains("html")){
+				Elements imgs = page.select("img[src]");
+				for(Element img : imgs){
+					String imgSrc = img.attr("abs:src");
+					next.add(imgSrc);
+				}
+			}else if(contentType.startsWith("image")){
+				String extensionName = contentType.split("/")[1];
+				String imageFileName = imageId.incrementAndGet()+"."+extensionName;
+				File imageFile = new File(downloadDir, imageFileName);
+				try{
+					FileUtils.writeFile(imageFile, page.getContent());
+					System.out.println("±£´æÍ¼Æ¬£º"+page.getUrl()+"µ½"+imageFile.getAbsolutePath());
+				}catch (IOException e){
+					throw new RuntimeException(e);
+				}
+			}
+			
+		}
+	}
+	
+	
+	
+	 public void computeImageId(){
+	        int maxId=-1;
+	        for(File imageFile:downloadDir.listFiles()){
+	            String fileName=imageFile.getName();
+	            String idStr=fileName.split("\\.")[0];
+	            int id=Integer.valueOf(idStr);
+	            if(id>maxId){
+	                maxId=id;
+	            }
+	        }
+	        imageId=new AtomicInteger(maxId);
+	    }
+
+
+
+
+	public static void main(String[] args) throws Exception{
+		test01 crawler = new test01("crawl", "download");
+		crawler.addSeed("http://www.xincailiao.com/index.html");
+		crawler.addRegex("http://www.xincailiao.com/html/.*html");
+	    crawler.setThreads(50);
+	    crawler.setTopN(100);
+	    crawler.start(4);
+	}
+}

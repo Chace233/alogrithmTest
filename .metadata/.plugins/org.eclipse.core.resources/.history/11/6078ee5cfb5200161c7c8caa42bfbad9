@@ -1,0 +1,33 @@
+package webcollector;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jsoup.nodes.Document;
+
+public class test01 {
+
+    public static boolean Regex(String str, String regex){
+    	ArrayList<String> list = new ArrayList<String>();
+    	Pattern pattern = Pattern.compile(regex);
+    	Matcher matcher = pattern.matcher(str);
+    	if(matcher.find()){
+    		return true;
+    	}
+    	return false;
+    }
+    
+    public static  boolean isInOneWeek(String time){
+    	//String time = doc.select("abbr[class=time]").text();
+    	@SuppressWarnings("deprecation")
+		Date d = new Date(time);
+    	System.out.println(d);
+    	return false;
+    }
+    
+    public static void main(String[] args){
+    	System.out.println(test01.isInOneWeek("2016-07-24 21:18:41"));
+    }
+}

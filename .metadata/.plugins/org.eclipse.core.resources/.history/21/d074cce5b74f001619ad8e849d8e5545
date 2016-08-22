@@ -1,0 +1,70 @@
+package webcollector;		
+
+
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+public class test01 extends BreadthCrawler {
+    public test01(String crawlPath, boolean autoParse) {
+	    super(crawlPath, autoParse);
+	    this.addSeed("http://36kr.com");
+	    this.addRegex("http://36kr.com/p/.*html");
+	    this.addRegex("-.*\\.(jpg|png|gif).*");
+	    this.addRegex("-.*#.*");
+    }
+
+    @Override
+    public void visit(Page page, CrawlDatums next) {
+    	ArrayList<String> list = getUrls(page.getHtml(), "http://36kr.com/p/.*?html");
+    	System.out.println(list);
+    	for(String url : list){
+    		try {
+				JsoupConnect(url);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}
+    	
+    }
+    
+    public void JsoupConnect(String url) throws IOException{
+    	Document doc = null;
+    	String res = htmlunitTest.preloading(url);
+    	doc = Jsoup.parse(res);
+    	String title = doc.select("h1").text();
+    	System.out.println("title: "+title);
+    	/*Elements  authers = doc.getElementsByClass("auther");
+    	for(Element auther : authers){
+    		System.out.println("×÷Õß£º"+auther.text());
+    	}*/
+    }
+    
+    public ArrayList<String> getUrls(String html, String regex){
+    	ArrayList<String> list = new ArrayList<String>();
+    	Pattern pattern = Pattern.compile(regex);
+    	Matcher matcher = pattern.matcher(html);
+    	while(matcher.find()){
+    		list.add(matcher.group());
+    	}
+    	return list;
+    }
+    
+
+    public static void main(String[] args) throws Exception {
+    	test01 crawler = new test01("crawl", true);
+	    crawler.setThreads(50);
+	    crawler.setTopN(1);
+	    crawler.start(4);
+    }
+
+}
+

@@ -1,0 +1,120 @@
+package webcollector;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+
+
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class JsoupDemo1 extends BreadthCrawler {
+
+    public JsoupDemo1(String crawlPath, boolean autoParse) {
+	    super(crawlPath, autoParse);
+	    /*start page*/
+	    
+	    this.addSeed("http://www.36kr.com");
+	
+	    /*fetch url like http://news.hfut.edu.cn/show-xxxxxxhtml*/
+	    this.addRegex("http://36kr.com/p/.*?html");
+	    /*do not fetch jpg|png|gif*/   
+	    this.addRegex("-.*\\.(jpg|png|gif).*");
+	    /*do not fetch url contains #*/
+	    this.addRegex("-.*#.*");
+    }
+
+	@Override
+    public void visit(Page page, CrawlDatums next) {
+		//System.out.println("Page:"+page.getUrl());
+		//System.out.println("Page:"+page.getHtml());
+		
+		ArrayList<String> Urls = patchOfJs(page.getHtml());
+		Urls.add(page.getUrl());
+	    
+		for(String url:Urls){
+			System.out.println("every url:"+url);
+			JsoupConnector(url);
+		}
+		
+	    	
+//if (url.matchUrl("http://36kr.com/p/.*?html")) {
+	/*we use jsoup to parse page*/
+//}
+    }
+
+	
+	public ArrayList<String> patchOfJs(String html){
+		Pattern p = Pattern.compile("http://36kr.com/p/.*?html");
+		Matcher m = p.matcher(html);
+		ArrayList<String> URLs = new ArrayList<>();
+		while(m.find()){
+			URLs.add(m.group());
+		}
+		System.out.println(URLs.size());
+		return URLs;
+	}
+	
+	public void JsoupConnector(String pages){
+    	Document doc = null;
+		try {
+			doc = Jsoup.connect(pages).get();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Elements els = (Elements) doc.select("script");
+  		String contents = "";
+        String title= "";
+		for(org.jsoup.nodes.Element el: els){
+			String elString = el.toString();
+	        //System.out.println("el"+elString);
+	        if(elString.contains("var props"))
+			{
+	        	int indexTitle = elString.indexOf("\"title\"")+9;
+	        	int indexContent = elString.indexOf("\"content\"")+11;
+	        	if (indexTitle < 9 || indexContent < 11) break;
+	        	
+	        	title 		= elString.substring(indexTitle,
+    							elString.indexOf(",",indexTitle)-1);
+	        	contents 	= elString.substring(indexContent,
+    							elString.indexOf(",\"cover\"",indexContent)-1);
+	        	
+	        	contents = contents.replaceAll("<[\\S\\s]*?>", "");//去掉html标签
+
+				System.out.println("标题："+title);
+				System.out.println("内容："+contents);
+				break;		
+			}
+		}
+	}
+	
+	
+    public static void main(String[] args) throws Exception {
+    	//final WebClient webClient=new WebClient(BrowserVersion.CHROME);
+    	//final HtmlPage page=webClient.getPage("http://www.36kr.com");
+    	//http://www.yanyulin.info");
+    	//webClient.getOptions().setCssEnabled(false);
+    	//System.out.println(page.asText());
+    	//webClient.close();
+    	//*
+        System.out.println("content:开始");
+        JsoupDemo1 crawler = new JsoupDemo1("crawl", true);
+	    crawler.setThreads(50);
+	    crawler.setTopN(100);
+	    //crawler.setResumable(true);
+	    crawler.start(4);
+	    //*/
+    }
+
+}
+
+

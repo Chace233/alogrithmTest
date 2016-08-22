@@ -1,0 +1,281 @@
+package webcollector;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+public class Functions {
+	
+	public static int 		MAX_CLICK_TIMES 	= 32;
+	public static boolean 	ENABLE_AJAX_SLEEP 	= false;
+	public static int 		AJAX_SLEEP_TIME   	= 10;
+	
+	
+	//下载图片
+	public static void downloadImg(String src) throws IOException{ 
+    	String fileName = getFileName(src);
+    	URL url = new URL(src);
+    	URLConnection uc = url.openConnection();
+    	InputStream in = uc.getInputStream();
+    	File file = new File("download/"+fileName);
+    	@SuppressWarnings("resource")
+		FileOutputStream out = new FileOutputStream(file);
+    	int i = 0;
+    	while ((i = in.read()) != -1){
+    		out.write(i);
+    	}
+    	in.close();
+    }
+	
+	//判断是否与正则表达式相符
+    public static boolean RegexUrl(String url, String regex){  
+    	
+    	Pattern pattern = Pattern.compile(regex);
+    	Matcher m = pattern.matcher(url);
+    	if(m.find()) return true;
+    	return false;
+    }
+    
+  //得到文件名 （如果想改直接改这里）
+    private static String getFileName(String src){  
+    	String fileName = "";
+    	int a = 0,b = src.length();
+    	for(int i = src.length()-1; i >=0 ;i --){
+    		if(src.charAt(i) == '!') b = i;
+    		if(src.charAt(i) == '/'){
+    			a = i;
+    			break;
+    		}
+    	}
+    	fileName = src.substring(a, b);
+    	return fileName;
+    }
+    
+    //文件写入
+    public static void WriteFile(String url) throws IOException{ 
+    	File file = new File("D://content4.txt");
+    	FileWriter fw = new FileWriter(file,true);
+    	BufferedWriter bw = new BufferedWriter(fw);
+    	bw.write(url+"\n");
+    	bw.close();
+    }
+    
+    public static JSONObject getJsonPart(String html ) {
+    	String res = "";
+    	String regex1 = "<script>var props=";
+    	String regex2 = "}}}</script";
+    	Pattern pattern = Pattern.compile(regex1);
+    	Matcher matcher = pattern.matcher(html);
+    	int i = 0;
+    	if(matcher.find()){
+    		 i = matcher.end();
+    		System.out.println(i);
+    		System.out.println("####"+html.charAt(i));
+    	}
+    	
+    	pattern = Pattern.compile(regex2);
+    	matcher = pattern.matcher(html);
+    	int j = 0;
+    	if(matcher.find()){
+    		 j = matcher.start()+3;
+    		System.out.println(j);
+    		System.out.println("####"+html.charAt(j));
+    	}
+    	res=html.substring(i, j);
+    	//System.out.println("ssss:  "+res.charAt(16876));
+  
+    	JSONObject json = new JSONObject(res);
+    	return json;    	
+    }
+    
+    public static ArrayList<String> getUrls(String html, String regex){
+    		Pattern p = Pattern.compile(regex);
+    		Matcher m = p.matcher(html);
+    		ArrayList<String> URLs = new ArrayList<>();
+    		while(m.find()){
+    			URLs.add(m.group());
+    		}
+    		System.out.println(URLs.size());
+    		return URLs;
+    }
+    
+    public static String getYear(){
+    	int y;
+    	Calendar c = Calendar.getInstance();
+    	y = c.get(Calendar.YEAR);
+    	String year = y+"";
+    	return year;
+    }
+
+
+	public static String[] getDate(){
+    	int y,m,d;
+    	Calendar c = Calendar.getInstance();
+    	m = c.get(Calendar.MONTH)+1;
+    	d = c.get(Calendar.DATE)-10;
+    	String[] date = new String[7];
+    	
+    	for(int i = 0; i < 7; i++){
+    		date[i] = String.format("%02d", m)+String.format("%02d", d-i);
+    	}
+    	return date;
+    }
+	
+	
+	//获取adafruit网站SHOP目录下分类的网址
+	public static ArrayList<String> getCategories(String url) throws IOException{
+		System.out.println("获取第一级url。。。。。");
+		ArrayList<String> res = new ArrayList<String>();
+		Document doc = Jsoup.connect(url).timeout(60000).userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31").get();
+		Elements eles = doc.select("div[class=col-lg-11 col-md-11 col-sm-11 col-xs-11] h3");
+		for(Element ele : eles){
+			String name = ele.text();
+			//System.out.println("###name+ "+name);
+			String src = "https://www.adafruit.com/"+ele.select("a").attr("href");
+			//System.out.println("----src: "+src);
+			res.add(src);
+		}
+		return res;
+	}
+	
+	
+	/**
+	 * 对于36Kr页面少的补丁函数
+	 * @param url 当前的Url
+	 * @param parent 目前的节点
+	 * @param times 点击加载更多的次数
+	 */
+	public static void patcOf36Kr(String url,ArrayList<String> parent,int times){
+    	if (Functions.is36Kr(url)){
+			String lastPageUrl = parent.get(parent.size()-1);
+			String lastPageId  = lastPageUrl.substring(
+					lastPageUrl.lastIndexOf("/")+1, 
+					lastPageUrl.lastIndexOf("."));
+			
+			try {
+				ArrayList<String> l = loadMoreIn36Kr(Integer.parseInt(lastPageId), times);
+				for(String u : l){
+					parent.add("http://36kr.com/p/"+u+".html");
+		    	}
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+    	}
+    }
+	
+	public static ArrayList<String> loadMoreIn36Kr(int nowid,int times) throws Exception{
+    	if (times > Functions.MAX_CLICK_TIMES){
+    		throw new Exception("it would be easy to be forbidden,if times was great!");
+    	}
+    	if (times <= 0){
+    		return null;
+    	}
+    	
+    	String aimUrl = "http://36kr.com/api/info-flow/main_site/posts?b_id="+
+    					nowid+"&per_page=20";
+    	if (ENABLE_AJAX_SLEEP){
+    		Thread.sleep(AJAX_SLEEP_TIME);
+    	}
+    	String res    = sendGet(aimUrl);
+    	
+    	ArrayList<String> retList   = new ArrayList<>();
+    	
+    	retList = Functions.get36KrClickedUrls(res);
+    	
+    	ArrayList<String> childList = loadMoreIn36Kr(
+			    			Integer.parseInt( retList.get(retList.size()-1) ), 
+			    			times - 1);
+    	
+    	if (childList != null)
+    		for(String l:childList){
+    			retList.add(l);
+    		}
+    	
+    	return retList;
+    }
+	
+	public static String sendGet(String url) {
+        String result = "";
+        BufferedReader in = null;
+        try {
+            String urlNameString = url;
+            URL realUrl = new URL(urlNameString);
+            URLConnection connection = realUrl.openConnection();
+            connection.setRequestProperty("accept", "*/*");
+            connection.setRequestProperty("connection", "Keep-Alive");
+            connection.setRequestProperty("user-agent",
+                    "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+            connection.connect();
+            in = new BufferedReader(new InputStreamReader(
+                    connection.getInputStream()));
+            String line;
+            while ((line = in.readLine()) != null) {
+                result += line;
+            }
+        } catch (Exception e) {
+            System.out.println("发送GET请求出现异常！" + e);
+            e.printStackTrace();
+        }
+        finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+        return result;
+    }
+	
+	public static ArrayList<String> get36KrClickedUrls(String json){
+		ArrayList<String> list = new ArrayList<>();
+		Pattern p = Pattern.compile("\"id\":[\\d\\D]{2,10},\"column");
+		Matcher m = p.matcher(json);
+		while( m.find() ){
+			String text = m.group();
+			text = text.substring(5, text.lastIndexOf(","));
+			list.add(text);
+		}
+		//System.out.println("$$$$$$$$$"+list);
+		return list;
+	}
+	
+	public static 	ArrayList<String> get36KrClickedUrls2(String res){
+		ArrayList<String> list = new ArrayList<>();
+		JSONObject json = new JSONObject(res);
+		System.out.println(json);
+		return list;
+	}
+	
+	
+	public static boolean is36Kr(String url){
+		return url.matches("http://36kr.com.*");
+	}
+    
+    public static void main(String[] args) throws IOException{
+    	//String res = "{"code":0,"data":{"items":[{"id":5049960,"column_id":23,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"美国电信公司 Verizon 或将 50 亿美金收购雅虎","catch_title":"Verizon 或将 50 亿美金收购雅虎","summary":"雅虎这次要花落Verizon ","cover":"https://pic.36krcnd.com/avatar/201607/24083557/oa1bxv3n7pk5zkvr.png","extraction_tags":"[[\"\\u96c5\\u864e\",8.08579957432],[\"\\u5e7f\\u544a\",4.62795827727],[\"\\u89c6\\u9891\",3.76152351372]]","user_id":437822,"published_at":"2016-07-24 21:18:41","created_at":"2016-07-24 16:31:13","updated_at":"2016-07-24 21:18:41","column":{"id":23,"name":"大公司","bg_color":"#1da8fe"},"user":{"id":437822,"name":"惜墨","avatar_url":"https://krplus-pic.b0.upaiyun.com/201601/12051420/2crs7xdj6mlvkhph.jpg!480"}},{"id":5049967,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"没事别想不开去创业公司","catch_title":"","summary":"押上自己所有的时间和机会筹码，自己创业或加入创业公司，是不是一步好棋，很难说。","cover":"https://pic.36krcnd.com/avatar/201607/24125455/a0dhyhzh00e2crx3.jpg","extraction_tags":"[[\"\\u521b\\u4e1a\",8.75727771992],[\"\\u7b79\\u7801\",3.929088],[\"\\u675c\\u7ecd\\u6590\",2.26752]]","user_id":375349,"published_at":"2016-07-24 20:56:40","created_at":"2016-07-24 20:48:56","updated_at":"2016-07-24 20:56:40","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":375349,"name":"36氪的朋友们","avatar_url":"http://krplus-pic.b0.upaiyun.com/201603/22055321/cg0huhoojxi0iipw.jpg!480"}},{"id":5049964,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"互联网技术人才招聘分析报告——什么语言的程序员最受CEO青睐？","catch_title":"","summary":"什么语言的程序员“最抢手”，什么语言程序员“性价比”最高呢？","cover":"https://pic.36krcnd.com/avatar/201607/24111850/jwgym40y6vckukou.jpg","extraction_tags":"[[\"\\u62db\\u8058\",7.73072795226],[\"\\u6570\\u636e\",4.745376],[\"\\u4e50\\u804c\",3.54996097002]]","user_id":375349,"published_at":"2016-07-24 19:22:07","created_at":"2016-07-24 19:19:31","updated_at":"2016-07-24 19:22:07","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":375349,"name":"36氪的朋友们","avatar_url":"http://krplus-pic.b0.upaiyun.com/201603/22055321/cg0huhoojxi0iipw.jpg!480"}},{"id":5049963,"column_id":72,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"人死后手机成为秘密？美警方想用3D打印手指指纹来解锁","catch_title":"人死后手机成为秘密，但美警方想用3D打印手指指纹来解锁","summary":"To be or not to be?...","cover":"https://pic.36krcnd.com/avatar/201607/24103317/2r1hmmzk2n1nkhma.png","extraction_tags":"[[\"\\u6cd5\\u5f8b\",2.82174043928],[\"jain\",2.08614544258],[\"\\u8b66\\u65b9\",1.8309]]","user_id":238500,"published_at":"2016-07-24 18:34:54","created_at":"2016-07-24 18:00:02","updated_at":"2016-07-24 18:50:39","column":{"id":72,"name":"其他","bg_color":"#000000"},"user":{"id":238500,"name":"杜暮雨","avatar_url":"https://krid-assets.b0.upaiyun.com/uploads/user/avatar/392679/6fb6e449-2795-4de8-8240-bfaa2becd9d1.jpg!480"}},{"id":5049959,"column_id":67,"related_company_id":0,"related_company_type":"foreign","related_company_name":"","close_comment":0,"title":"获 2000 万元 A 轮融资，星路天下的造星思路是“IP 大于个人” ","catch_title":"星路天下获A轮融资","summary":"现在的星路天下更像是一家影视公司了","cover":"https://pic.36krcnd.com/avatar/201607/24080658/zjn7pvu7sawv8l3e.jpg","extraction_tags":"[[\"\\u661f\\u8def\\u5929\\u4e0b\",8.93058930932],[\"\\u7535\\u5f71\",4.84760572637],[\"\\u9020\\u661f\",4.70196011842]]","user_id":170935,"published_at":"2016-07-24 17:28:49","created_at":"2016-07-24 16:10:15","updated_at":"2016-07-24 17:49:11","column":{"id":67,"name":"早期项目","bg_color":"#0bbc6b"},"user":{"id":170935,"name":"二水水","avatar_url":"https://krid-assets.b0.upaiyun.com/uploads/user/avatar/327099/09d80114-dabb-4f1f-8cdc-d12f1fe7183c.jpeg!480"}},{"id":5049920,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"抢人抢钱抢地盘，印度在线音乐产业迎战国时代？","catch_title":"抢人抢钱抢地盘 印度在线音乐产业迎战国时代？","summary":"流媒体音乐应用已经超越音乐网站成为印度音乐市场的主流。但是印度在线音乐市场还不完善，该产业尚未有龙头企业出现。此外，不断创新的网络音乐模式正对主流平台发起挑战。","cover":"https://pic.36krcnd.com/avatar/201607/22134842/x35mn62a8t6zdr8y.jpg","extraction_tags":"[[\"\\u97f3\\u4e50\",10.5496832833],[\"\\u5e73\\u53f0\",7.07051423458],[\"\\u5185\\u5bb9\",5.72710665355]]","user_id":400576,"published_at":"2016-07-24 16:46:08","created_at":"2016-07-22 21:40:12","updated_at":"2016-07-24 16:46:09","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":400576,"name":"竺道","avatar_url":"https://krplus-pic.b0.upaiyun.com/201603/16051134/jr2dtfq9n8jvd5ej.jpg!480"}},{"id":5049956,"column_id":68,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"横空出世一年后仍想叫板Amazon，Jet.com这次说了些什么？","catch_title":"一年后仍想叫板Amazon，Jet.com这次说了些什么？","summary":"显然，Jet没有依靠会员年费的噱头颠覆巨头，但已经走在了回归零售本质的路上。","cover":"https://pic.36krcnd.com/avatar/201607/24075102/c4gz88lhzjzizl7e.jpg","extraction_tags":"[[\"jet\",3.26090184898],[\"smart\",3.03399861738],[\"\\u7269\\u6d41\",2.71431802084]]","user_id":238500,"published_at":"2016-07-24 16:10:58","created_at":"2016-07-24 13:52:54","updated_at":"2016-07-24 16:11:20","column":{"id":68,"name":"B轮后","bg_color":"#1ac3f4"},"user":{"id":238500,"name":"杜暮雨","avatar_url":"https://krid-assets.b0.upaiyun.com/uploads/user/avatar/392679/6fb6e449-2795-4de8-8240-bfaa2becd9d1.jpg!480"}},{"id":5049950,"column_id":23,"related_company_id":0,"related_company_type":"foreign","related_company_name":"","close_comment":0,"title":"搅局者来了， Salesforce 或将以远高于微软的 262 亿美金的价格收购 LinkedIn","catch_title":"搅局者  Salesforce","summary":"没有一点点防备~","cover":"https://pic.36krcnd.com/avatar/201607/24031334/tv6tl1w54sjglsvl.jpg","extraction_tags":"[[\"linkedin\",7.262976],[\"\\u5fae\\u8f6f\",6.09225659403],[\"salesforce\",5.700384]]","user_id":437822,"published_at":"2016-07-24 11:16:28","created_at":"2016-07-24 10:20:26","updated_at":"2016-07-24 13:59:31","column":{"id":23,"name":"大公司","bg_color":"#1da8fe"},"user":{"id":437822,"name":"惜墨","avatar_url":"https://krplus-pic.b0.upaiyun.com/201601/12051420/2crs7xdj6mlvkhph.jpg!480"}},{"id":5049870,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"15分钟让你知道最好的Fintech创业者在想什么","catch_title":"15分钟让你知道最好的Fintech创业者在想什么？","summary":"7 月 20 日，峰瑞资本携手 36Kr、华创资本共同举办了 “36Kr Wise X Fintech” 主题论坛。今天我们分享峰瑞资本早期项目负责人赵治远与几位消费金融创业者的对谈。","cover":"https://pic.36krcnd.com/avatar/201607/21140630/bk08t5oitdtae8he.jpg","extraction_tags":"[[\"\\u91d1\\u878d\",7.6512387024],[\"\\u6d88\\u8d39\\u91d1\\u878d\",6.37268055553],[\"\\u501f\\u8d37\",6.10224903318]]","user_id":396871,"published_at":"2016-07-24 09:43:10","created_at":"2016-07-21 21:58:06","updated_at":"2016-07-24 09:43:10","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":396871,"name":"峰小瑞","avatar_url":"https://krplus-pic.b0.upaiyun.com/201512/07031534/wtoft0k4sa8azzkz.jpg!480"}},{"id":5049949,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"【Weekly Overseas】被Pokemon Go和财报刷屏，但也不要忘记参考本周的海外融资项目","catch_title":"本周海外投融资项目","summary":"整体投融资项目数量明显减少，D轮后的项目仅有1个（独角兽出现）。","cover":"https://pic.36krcnd.com/avatar/201607/24004958/8a6l5hjpfmw743bg.jpg","extraction_tags":"[[\"\\u5e73\\u53f0\",7.4522209908],[\"\\u6570\\u636e\",6.46551602259],[\"\\u6c7d\\u8f66\",5.35803547204]]","user_id":411878774,"published_at":"2016-07-24 08:56:49","created_at":"2016-07-24 08:36:41","updated_at":"2016-07-24 17:47:30","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":411878774,"name":"宇多田","avatar_url":"https://pic.36krcnd.com/avatar/201605/03052519/sb8aqszymiq7udqm.jpg!480"}},{"id":5049942,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"继双十一之后阿里巴巴又造了一个节，但主要目的可能并不是卖货","catch_title":"继双十一之后阿里巴巴又造了一个节","summary":"阿里方面称，相比于美国电商亚马逊，淘宝并不仅仅关注购物转化率。","cover":"https://pic.36krcnd.com/avatar/201607/23150844/0idoi4427qgnbhrn.jpg","extraction_tags":"[[\"\\u6dd8\\u5b9d\",8.30363122098],[\"\\u9020\\u7269\",7.09213045461],[\"\\u963f\\u91cc\",5.255136]]","user_id":1419594698,"published_at":"2016-07-23 23:17:42","created_at":"2016-07-23 18:25:32","updated_at":"2016-07-24 17:06:41","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":1419594698,"name":"缪定纯","avatar_url":"https://pic.36krcnd.com/avatar/201605/30064735/od8412l6ee347k0g.jpg!480"}},{"id":5049944,"column_id":67,"related_company_id":0,"related_company_type":"foreign","related_company_name":"","close_comment":0,"title":"按需仓储管理平台 Flexe 完成 1425 万美元 A 轮融资","catch_title":"FLEXE 完成 1425 万美元 A 轮融资","summary":"合理进行资源配置是按需经济的核心","cover":"https://pic.36krcnd.com/avatar/201607/23151058/7zbtkkhcxolxudsb.jpg","extraction_tags":"[[\"\\u5e73\\u53f0\",4.76827726537],[\"\\u7269\\u6d41\",3.425088],[\"flexe\",1.8]]","user_id":420313362,"published_at":"2016-07-23 23:07:16","created_at":"2016-07-23 19:45:47","updated_at":"2016-07-23 23:13:26","column":{"id":67,"name":"早期项目","bg_color":"#0bbc6b"},"user":{"id":420313362,"name":"aiko","avatar_url":"https://pic.36krcnd.com/avatar/201606/29081716/2nj5pcmoq4rhzjr8.JPG!480"}},{"id":5049934,"column_id":67,"related_company_id":0,"related_company_type":"foreign","related_company_name":"","close_comment":0,"title":"花费99美元， 3D Sound Labs 可以让一款普通头戴式耳机变成3D耳机","catch_title":" 3D Sound Labs 可以让普通耳机变成3D耳机","summary":"进步都是一步步来的","cover":"https://pic.36krcnd.com/avatar/201607/23094015/fb8akgevde2jfqhd.jpg","extraction_tags":"[[\"vr\",2.83056551049],[\"\\u4e1c\\u65b9\\u9177\\u97f3\",2.285856],[\"mintmuse\",2.26752]]","user_id":437822,"published_at":"2016-07-23 22:11:26","created_at":"2016-07-23 14:52:24","updated_at":"2016-07-23 22:11:26","column":{"id":67,"name":"早期项目","bg_color":"#0bbc6b"},"user":{"id":437822,"name":"惜墨","avatar_url":"https://krplus-pic.b0.upaiyun.com/201601/12051420/2crs7xdj6mlvkhph.jpg!480"}},{"id":5049943,"column_id":67,"related_company_id":0,"related_company_type":"foreign","related_company_name":"","close_comment":0,"title":"数字医疗公司 AristaMD 完成 1100 万美元 A 轮融资，优化就诊需求及服务","catch_title":"AristaMD 完成 1100 万美元 A 轮融资","summary":"减少不必要的专家就诊，合理匹配医生资源，是一个独特的解决方案。","cover":"https://pic.36krcnd.com/avatar/201607/23104125/zm2byrdrkmm5cbei.png","extraction_tags":"[[\"\\u5e73\\u53f0\",4.512672],[\"avalon\",4.3152],[\"\\u89e3\\u51b3\\u65b9\\u6848\",3.77578943993]]","user_id":420313362,"published_at":"2016-07-23 21:44:18","created_at":"2016-07-23 18:27:40","updated_at":"2016-07-23 21:44:33","column":{"id":67,"name":"早期项目","bg_color":"#0bbc6b"},"user":{"id":420313362,"name":"aiko","avatar_url":"https://pic.36krcnd.com/avatar/201606/29081716/2nj5pcmoq4rhzjr8.JPG!480"}},{"id":5049940,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"“埋点”到底要不要？——源自数据采集的痛苦、幻想与失望","catch_title":"","summary":"​随着移动互联网时代的兴起和数据量的大规模爆发，越来越多的互联网企业开始重视数据的质量。在我创业的这一年里，接触了 200 多家创业型公司，发现如今的企业对数据的需求已经不仅仅局限于简单的 PV、UV，而是更加重视用户使用行为数据的相关分析。","cover":"https://pic.36krcnd.com/avatar/201607/23132825/i2buz3rh247q3542.png","extraction_tags":"[[\"\\u6570\\u636e\",10.1383233077],[\"sdk\",5.494464],[\"pmcaff\",4.84907748251]]","user_id":401113,"published_at":"2016-07-23 21:28:39","created_at":"2016-07-23 17:05:48","updated_at":"2016-07-23 21:28:39","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":401113,"name":"PMCAFF产品社区","avatar_url":"https://krplus-pic.b0.upaiyun.com/201512/09112633/nnbku4o8ovs7k6u3.jpg!480"}},{"id":5049945,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"Dollar Shave Club与颠覆一切","catch_title":"Dollar Shave Club与颠覆一切","summary":"宝洁优势的建立在于研发、广告和批发零售，但是互联网和电子商务瓦解了它的优势并且破坏了它的价值基础。有多少人意识到一切正在被颠覆呢？","cover":"https://pic.36krcnd.com/avatar/201607/23123245/iqbfi5uqz3i7xb1o.jpg","extraction_tags":"[[\"\\u5b9d\\u6d01\",10.3664854565],[\"\\u5e7f\\u544a\",6.27647027727],[\"\\u8054\\u5408\\u5229\\u534e\",4.82099144028]]","user_id":1694,"published_at":"2016-07-23 20:33:22","created_at":"2016-07-23 20:13:27","updated_at":"2016-07-23 20:33:22","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":1694,"name":"boxi","avatar_url":"https://krplus-pic.b0.upaiyun.com/201512/17/678707fe4cf1497ca01c7dba793df800.jpg!480"}},{"id":5049933,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"2016年度大学生互联网就业现状与态度调查分析报告","catch_title":"2016年的大学生，有多想去互联网工作，又有多了解互联网？","summary":"“专业不对口”会成为大学生进入互联网行业的拦路虎么？本科学历的大学生（期望）薪资是4994元/月？太多大学生和互联网的信息，尽在此份报告......","cover":"https://pic.36krcnd.com/avatar/201607/23104337/g9cskhzr9jppu88g.jpg","extraction_tags":"[[\"\\u5927\\u5b66\\u751f\",11.4105785187],[\"\\u5a92\\u4f53\",4.950432],[\"\\u5185\\u5bb9\",4.48485055276]]","user_id":403102,"published_at":"2016-07-23 18:52:52","created_at":"2016-07-23 14:15:48","updated_at":"2016-07-23 18:52:52","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":403102,"name":"三节课","avatar_url":"https://krplus-pic.b0.upaiyun.com/201601/22071531/wmkdsh5gsf02of87.jpg!480"}},{"id":5049941,"column_id":70,"related_company_id":0,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"​作为创业者，你真的会讲故事吗？","catch_title":"你会讲故事吗","summary":"每一个创业者都需要学会讲的三种故事。","cover":"https://pic.36krcnd.com/avatar/201607/23103443/3g17wd0ho0lzdu6l.jpg","extraction_tags":"[[\"facebook\",5.77963089208],[\"\\u521b\\u4e1a\",5.54914971992],[\"\\u5185\\u5bb9\",4.48485055276]]","user_id":332919,"published_at":"2016-07-23 18:35:36","created_at":"2016-07-23 17:42:20","updated_at":"2016-07-23 18:35:37","column":{"id":70,"name":"深度","bg_color":"#f04666"},"user":{"id":332919,"name":"达达","avatar_url":"https://krid-assets.b0.upaiyun.com/uploads/user/avatar/2694/05f4a8a5-17c2-45c2-b171-e8f0dd3bfeb8.jpg!480"}},{"id":5049739,"column_id":67,"related_company_id":214525,"related_company_type":"domestic","related_company_name":"","close_comment":0,"title":"从种植到智能硬件，“花花草草”想靠设施农业解决花卉供应链难题","catch_title":"从种植到智能硬件，花花草草想靠设施农业解决花卉供应链难题","summary":"中国为什么迟迟没有出现1-800-flowers、FTD、Proflowers？","cover":"https://pic.36krcnd.com/avatar/201607/21053120/aox09llgphe4jjqk.PNG","extraction_tags":"[[\"\\u519c\\u4e1a\",5.75911974262],[\"\\u667a\\u80fd\\u786c\\u4ef6\",4.1406850839],[\"\\u5c0f\\u7c73\",4.13087725963]]","user_id":238500,"published_at":"2016-07-23 18:31:58","created_at":"2016-07-19 15:06:30","updated_at":"2016-07-23 18:32:37","column":{"id":67,"name":"早期项目","bg_color":"#0bbc6b"},"user":{"id":238500,"name":"杜暮雨","avatar_url":"https://krid-assets.b0.upaiyun.com/uploads/user/avatar/392679/6fb6e449-2795-4de8-8240-bfaa2becd9d1.jpg!480"}},{"id":5049936,"column_id":67,"related_company_id":0,"related_company_type":"foreign","related_company_name":"","close_comment":0,"title":"上线 PGC 视频内容后，same 这座虚拟城市越来越丰富了","catch_title":"same推出same eye","summary":"不过内容有待优化啊..","cover":"https://pic.36krcnd.com/avatar/201607/23084708/58uyb6cucxt0f370.jpg","extraction_tags":"[[\"\\u5185\\u5bb9\",6.24139837455],[\"\\u89c6\\u9891\",5.60427922219],[\"\\u793e\\u533a\",3.83352186008]]","user_id":170935,"published_at":"2016-07-23 16:56:17","created_at":"2016-07-23 15:32:43","updated_at":"2016-07-23 17:15:05","column":{"id":67,"name":"早期项目","bg_color":"#0bbc6b"},"user":{"id":170935,"name":"二水水","avatar_url":"https://krid-assets.b0.upaiyun.com/uploads/user/avatar/327099/09d80114-dabb-4f1f-8cdc-d12f1fe7183c.jpeg!480"}}],"first":1,"before":1,"current":1,"last":2332,"next":2,"total_pages":2332,"total_items":46638,"limit":20}}";
+    	Functions.get36KrClickedUrls2(res);
+    	//Functions.getCategories("https://www.adafruit.com/categories");
+    }
+}

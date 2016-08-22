@@ -1,0 +1,14 @@
+package webcollector;
+
+import java.io.IOException;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+public class Kr {
+	public static void main(String[] args) throws IOException{
+		Document doc = Jsoup.connect("http://www.jb51.net/").get();
+		String title = doc.title();
+		System.out.println("title: "+ title);
+	}
+}

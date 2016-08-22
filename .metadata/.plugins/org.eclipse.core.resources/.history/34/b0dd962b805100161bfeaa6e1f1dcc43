@@ -1,0 +1,11 @@
+package webcollector;
+
+public class crawlerOnePage {
+	public static void onePage(String url) throws Exception{
+		adafruitCrawler crawler = new adafruitCrawler("crawler", true);
+		crawler.addSeed(url);
+		crawler.setThreads(1);
+	    crawler.setTopN(1);
+	    crawler.start(1);
+	}
+}

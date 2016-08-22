@@ -1,0 +1,32 @@
+package webcollector;
+
+import org.jsoup.nodes.Document;
+
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class crawlerOnePage extends BreadthCrawler{
+	
+	
+	public crawlerOnePage(String crawlPath, boolean autoParse) {
+		super(crawlPath, autoParse);
+	}
+
+	@Override
+	public void visit(Page page, CrawlDatums next) {
+		Document doc = page.getDoc();
+		String name = doc.select("div[id=prod-right-side] h1").text();
+		System.out.println("##name: "+name);
+	}
+	
+	public static void onePage(String url) throws Exception{
+		adafruitCrawler crawler = new adafruitCrawler("crawler", true);
+		crawler.addSeed(url);
+		crawler.setThreads(1);
+	    crawler.setTopN(1);
+	    crawler.start(1);
+	}
+
+	
+}

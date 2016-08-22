@@ -1,0 +1,95 @@
+package webcollector;		
+
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class KrCrawler2 extends BreadthCrawler {
+    public KrCrawler2(String crawlPath, boolean autoParse) {
+	    super(crawlPath, autoParse);
+	   
+    }
+
+    @Override
+    public void visit(Page page, CrawlDatums next) {       
+	ArrayList<String> list = Functions.getUrls(page.getHtml(), "http://36kr.com/p/.*?html");
+    	
+    	//参数的意义依次是，当前的URL，当前获取到的列表，需要点击加载跟多次数
+    	//没有改动太多就加了个函数
+    	//解释下函数的意思，有些网站会做爬虫的防止，短时间大量访问会封IP之类的。
+    	//Functions.MAX_CLICK_TIMES 最大点击加载更多的次数，默认32，按需设置
+    	//Functions.ENABLE_AJAX_SLEEP 是否模拟点击睡眠，默认false，按需设置
+    	//Functions.AJAX_SLEEP_TIME  每次模拟点击睡眠时长，默认10ms，单位ms，按需更改
+    	Functions.patcOf36Kr(page.getUrl(), list, 2);
+    	
+    	System.out.println(list);
+    	for(String url : list){
+    		try {
+				try {
+					JsoupConnect(url);
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}
+    /*	for(int i = 0; i<list.size();i++){
+    		System.out.println(list.get(i));
+    	}*/
+    	/*for(String url : list){
+    		try {
+				JsoupConnect(url);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}*/
+    }
+    
+    public void JsoupConnect(String url) throws IOException{
+    	Document doc = null;
+    	String res = htmlunitTest.preloading(url);
+    	doc = Jsoup.parse(res);
+    	String title = doc.select("h1").text();
+    	System.out.println("title: "+title);
+    	String auther = doc.select("span.name").text();
+    	System.out.println("auther: "+auther);
+    	Elements imgs = doc.select("div[class=mobile_article] img"); 
+    	for(Element img : imgs){
+    		String src = img.attr("src");
+    		if(Functions.RegexUrl(src, "http://.*heading")){  //判断是否是文章内的图片（文章内的图片都是以!heading结尾）
+    			Functions.downloadImg(src);
+    		}
+    	}
+    }
+    
+
+  
+    
+    public static void main(String[] args) throws Exception {
+    	KrCrawler2 crawler = new KrCrawler2("crawl", true);
+    	crawler.addSeed("http://36kr.com/news");
+    	crawler.addRegex("http://36kr.com/p/.*html");
+    	crawler.addRegex("-.*\\.(jpg|png|gif).*");
+    	crawler.addRegex("-.*#.*");
+	    crawler.setThreads(50);
+	    crawler.setTopN(20);
+	    crawler.start(1);
+    }
+
+}
+

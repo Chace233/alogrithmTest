@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy package &apos;MySQLTest&apos; to &apos;MysqlTest/src&apos;&#x0D;&#x0A;- Original project: &apos;Algorithm&apos;&#x0D;&#x0A;- Destination element: &apos;MysqlTest/src&apos;&#x0D;&#x0A;- Original element: &apos;Algorithm/src/MySQLTest&apos;" description="Copy package" destination="=MysqlTest/src" element1="/src&lt;MySQLTest" flags="589830" fragments="1" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyPackages" stamp="1468813042207" version="1.0"/>
+</session>

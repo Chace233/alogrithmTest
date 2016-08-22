@@ -1,0 +1,17 @@
+package webcollector;
+
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class xincailiaoCrawler extends BreadthCrawler{
+
+	public xincailiaoCrawler(String crawlPath, boolean autoParse) {
+		super(crawlPath, autoParse);
+		
+		this.addSeed("http://www.xincailiao.com/index.html");
+		this.addRegex("http://www.xincailiao.com/html/[a-z]+/[a-z]+/2016/0718/[0-9]+.html");
+		http://www.xincailiao.com/html/weikandian/chuneng/2016/0718/8338.html
+		http://www.xincailiao.com/html/weizixun/xinxinggongnencailiao/2016/0718/8339.html
+		http://www.xincailiao.com/html/weizixun/xianjinjiegoucailiao/2016/0715/8336.html
+	}
+	
+}

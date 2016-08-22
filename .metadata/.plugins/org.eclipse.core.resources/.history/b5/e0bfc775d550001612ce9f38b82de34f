@@ -1,0 +1,33 @@
+package webcollector;
+
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class test01 {
+
+    public static boolean Regex(String str, String regex){
+    	ArrayList<String> list = new ArrayList<String>();
+    	Pattern pattern = Pattern.compile(regex);
+    	Matcher matcher = pattern.matcher(str);
+    	if(matcher.find()){
+    		return true;
+    	}
+    	return false;
+    }
+    
+    public static void main(String[] args){
+    	test01 t = new test01();
+    	String str1 = "http://www.xincailiao.com/html/weizixun/xinxinggongnencailiao/2016/0777/8321.html";
+    	String regex = "http://www.xincailiao.com/html/weizixun/[a-z]+/"+Functions.getYear()+"/("
+                +Functions.getDate()[0]+
+            "|"+Functions.getDate()[1]+
+            "|"+Functions.getDate()[2]+
+            "|"+Functions.getDate()[3]+
+            "|"+Functions.getDate()[4]+
+            "|"+Functions.getDate()[5]+
+            "|"+Functions.getDate()[6]+").*html";
+    	System.out.println(regex);
+    	System.out.println(t.Regex(str1, regex));
+    }
+}

@@ -1,0 +1,132 @@
+package webcollector;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class techcrunchCrawler extends BreadthCrawler{
+
+	public techcrunchCrawler(String crawlPath, boolean autoParse) {
+		super(crawlPath, autoParse);
+	}
+	@Override
+	public void visit(Page page, CrawlDatums next) {
+		String url = page.getUrl();
+		if(page.matchUrl("http://techcrunch.cn/[0-9]+/[0-9]+/[0-9]+/.*")){
+			System.out.println("##URL:"+ url);
+			
+			String title = page.select("h1[class=alpha tweet-title]").text();
+			System.out.println("##title: "+ title);
+			
+			String datetime = page.select("div[class=byline] time").text();
+			System.out.println("##datetime: "+datetime);
+				
+			String auther = getAuther(page.select("div[class=byline] a").text());
+			System.out.println("##authre: "+auther); 
+			
+			Elements texts = page.select("div[class=article-entry text]");
+			ArrayList<String> contents = new ArrayList<String>(); 
+			for(Element text : texts){
+				//下载图片
+				Elements imgs = text.select("img");
+		    	for(Element img : imgs){
+		    		String src = img.attr("src");
+		    		if(Functions.RegexUrl(src, "http://files.techcrunch.cn/.*w=738")){
+		    			String url1 = src;
+		    			try {
+							downloadImg(url1);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+		    		}
+		    		break;
+		    	}
+		    	
+		    	//获取文章内容
+		    	Elements ps = text.select("p");
+		    	for(Element p : ps){
+		    		String content = "<p>"+p.text()+"</p>";
+		    		System.out.println("##content-:"+content);
+		    		contents.add(content);
+		    	}
+		    	//System.out.println("##content : "+contents);
+		    	break;
+			}
+			
+		}
+		
+		/*if(page.matchUrl("http://techcrunch.cn/2016/07/.*")){
+			String title = page.select("h1").text();
+			String content = page.select("div[class=article-entry text]").text();
+			try {
+				WriteInDB.writeInDB_techcrunch(title,content);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}*/
+		
+	}
+	
+	public String getAuther(String auther){
+		String res = auther;
+		if(auther.indexOf('@') > 0){
+			res = auther.substring(0,auther.indexOf('@'));
+		}
+		return res;
+	}
+	
+	//下载图片
+	public static void downloadImg(String src) throws IOException{ 
+    	String fileName = getFileName(src);
+    	URL url = new URL(src);
+    	URLConnection uc = url.openConnection();
+    	uc.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)"); 
+    	InputStream in = uc.getInputStream();
+    	File file = new File("download/"+fileName);
+    	FileOutputStream out = new FileOutputStream(file);
+    	int i = 0;
+    	while ((i = in.read()) != -1){
+    		out.write(i);
+    	}
+    	in.close();
+    }
+	//得到文件名 （如果想改直接改这里）
+    private static String getFileName(String src){  
+    	String fileName = "";
+    	int a = 0,b = src.length();
+    	for(int i = src.length()-1; i >=0 ;i --){
+    		if(src.charAt(i) == '?') b = i;
+    		if(src.charAt(i) == '/'){
+    			a = i;
+    			break;
+    		}
+    	}
+    	fileName = src.substring(a+1, b);
+    	System.out.println("####FileName: "+fileName);
+    	return fileName;
+    }
+	public static void main(String[] args) throws Exception{
+		techcrunchCrawler crawler = new techcrunchCrawler("crawl",true);
+		crawler.addSeed("http://techcrunch.cn/");
+		crawler.addRegex("http://techcrunch.cn/2016/.*");
+		crawler.addRegex("-.*\\.(jpg|png|gif).*");
+		crawler.addRegex("-.*#.*");
+		
+		crawler.setThreads(50);
+		crawler.setTopN(100);
+		crawler.start(5);
+	}
+
+}

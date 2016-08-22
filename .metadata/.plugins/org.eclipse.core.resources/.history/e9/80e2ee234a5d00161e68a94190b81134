@@ -1,0 +1,18 @@
+package Array;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class getData {
+	public static int getTimeStemp(String str) throws ParseException{
+		SimpleDateFormat simpledateformat = new SimpleDateFormat("yyyy-mm-dd");
+		Date date = simpledateformat.parse(str);
+		int timeStemp = (int) date.getTime();
+		return timeStemp;
+	}
+	
+	public static void main(String[] args){
+		String str1 = "2011-04-12";
+	}
+}

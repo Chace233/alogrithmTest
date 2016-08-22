@@ -1,0 +1,33 @@
+package webcollector;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+
+public class HttpRequest {
+
+	public static String sendGet(int b_id) throws IOException{
+		String result = "";
+		BufferedReader br = null;
+		String GetUrl = "http://36kr.com/api/info-flow/main_site/posts?column_id=&b_id="+b_id+"&per_page=20";
+		URL realUrl = new URL(GetUrl);
+		URLConnection conn = realUrl.openConnection();
+		conn.setRequestProperty("accept", "*/*");
+		conn.setRequestProperty("connection", "Keep-Alive");
+		conn.setRequestProperty("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0 ; Windows NT 5.1; SV1)");
+		conn.connect();
+		br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+		String line;
+		while((line = br.readLine()) != null){
+			result += line;
+		}
+		return result;
+	}
+	
+	public static void main(String[] args){
+		System.out.println(HttpRequest.sendGet(5049972));
+	}
+}

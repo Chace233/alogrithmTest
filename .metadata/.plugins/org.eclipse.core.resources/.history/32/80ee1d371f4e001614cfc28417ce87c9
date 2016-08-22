@@ -1,0 +1,236 @@
+package crawler;
+
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+
+import org.jsoup.*;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+
+import cn.edu.hfut.dmic.webcollector.model.CrawlDatums;
+import cn.edu.hfut.dmic.webcollector.model.Page;
+import cn.edu.hfut.dmic.webcollector.plugin.berkeley.BreadthCrawler;
+
+public class SensorCrawler1 extends BreadthCrawler {
+	
+    public SensorCrawler1(String crawlPath, boolean autoParse) {
+        super(crawlPath, autoParse);
+    }
+    
+    public static void contentToHtml(String filePath, String content) {
+        try {
+            FileOutputStream fos = new FileOutputStream(filePath);
+            BufferedWriter output = new BufferedWriter(new OutputStreamWriter(fos,"utf-8"));
+            output.write(content);
+            output.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void contentToTxt(String filePath, String content) {
+        String str = new String(); //ԭ��txt����
+        String s1 = new String();//���ݸ���
+        try {
+            File f = new File(filePath);
+            if (f.exists()) {
+            } else {
+                f.createNewFile();// �������򴴽�
+            }
+            BufferedReader input = new BufferedReader(new FileReader(f));
+
+            while ((str = input.readLine()) != null) {
+                s1 += str + "\r\n";
+            }
+            input.close();
+            s1 += content;
+
+            BufferedWriter output = new BufferedWriter(new FileWriter(f));
+            output.write(s1);
+            output.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
+    public static void contentcrawl(String inputFilePath, String outputFilePath) throws IOException
+    {
+    	Document doc = Jsoup.connect(inputFilePath).timeout(100000).userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31").get();
+    	
+    	String info = "";
+    	
+    	String id = doc.select("div[class=product_id mobile-text-wrapper]").text().toString();
+    	int length = id.length();
+    	id=id.trim();
+    	String newid = "";
+    	for(int i=0;i<length;i++)
+    	{
+    	    if(id.charAt(i)>=48 && id.charAt(i)<=57)
+    	    {
+    	        newid += id.charAt(i);
+    	    }
+    	}
+    	
+    	info += newid;
+    	info += "\t";
+    	
+    	/*Elements lis = doc.select("div#technical-details ul li");   
+    	String propertyname = "";
+		String propertycontent = "";
+		
+		propertyname += "id" + "\t";
+		propertycontent += newid + "\t";
+    	for(Element li : lis)
+    	{
+    		String str = li.text();
+    		
+    		if(str.contains(":"))
+    		{
+    		    int i = str.indexOf(":");
+    		    int j = str.length();
+    		    propertyname += str.substring(0, i) + "\t";
+    		    propertycontent += str.substring(i + 1,j) + "\t";
+    		}
+    		
+    	}
+    	info += propertyname + "\r\n" + propertycontent + "\r\n" + "\r\n";
+        contentToTxt(outputFilePath, info);*/
+    	
+ 
+    	Elements names = doc.select("div[class=row product-info] div[class=col-lg-12 col-md-12 col-sm-12 col-xs-12] h1[style]");
+        Elements prices = doc.select("div#prod-price[class]");
+        Elements images = doc.select("div[id=prod-primary-img-container] img");
+        Elements describes = doc.select("ul#prod-info div#description");
+        Elements techdetails = doc.select("div[id=technical-details]");
+        
+        info += "\t";
+        
+        for(Element name : names) 
+        {
+        	info = info + name.text();
+        	System.out.println(name);
+        }
+        
+        info += "\t";
+        
+        for(Element price : prices) 
+        {
+        	info = info + price.text();
+        	System.out.println(price);
+        }
+        
+        info += "\t";
+        
+        for(Element image : images) 
+        {
+        	String imageurl = "https://www.adafruit.com/" + image.attr("src");
+        	
+        	info = info + imageurl;
+        	System.out.println(imageurl);
+        	URL url = new URL(imageurl); 
+        	URLConnection uc = url.openConnection();
+        	uc.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)"); 
+        	InputStream is = uc.getInputStream();
+        	File file = new File("d:/RaspberryComputer/" + newid + ".jpg"); 
+        	@SuppressWarnings("resource")
+			FileOutputStream out = new FileOutputStream(file); 
+        	int j=0; 
+        	while((j=is.read())!=-1)   
+        	{ 
+        	    out.write(j); 
+        	} 
+        	is.close();
+        	
+        	System.out.println(image);
+        }
+        
+        info += "\t";
+        
+        for(Element describe : describes) 
+        {
+        	info = info + describe.text();
+        	System.out.println(describe);
+        }
+        
+        info += "\t";
+        
+        for(Element techdetail : techdetails) 
+        {
+        	info = info + techdetail.text();
+        	System.out.println(techdetail);
+        }
+        contentToTxt(outputFilePath, info);
+	}
+    
+    public static void categoryCrawl(String inputFilename) throws IOException
+    {
+    	File input = new File(inputFilename);
+    	Document doc = Jsoup.parse(input, "UTF-8");
+    	Elements lis = doc.select("ul#subcategories li a");
+    	String urls = "";
+    	String names = "";
+    	for(Element li : lis)
+    	{
+    		urls += "https://www.adafruit.com" + li.attr("href") + "\r\n";
+    		names += li.text() + "\r\n";
+    	}
+    	contentToTxt("d:/urls.txt",urls);
+    	contentToTxt("d:/names.txt",names);
+    }
+    
+    public static void urlCrawl(String inputFilename1, String inputFilename2) throws IOException
+    {
+    	File f1 = new File(inputFilename1);
+    	File f2 = new File(inputFilename2);
+    	@SuppressWarnings("resource")
+		BufferedReader br1 = new BufferedReader(new FileReader(f1));
+    	@SuppressWarnings("resource")
+		BufferedReader br2 = new BufferedReader(new FileReader(f2));
+    	String line = null;
+    	while((line = br1.readLine()) != null)
+    	{
+    		Document doc = Jsoup.connect(line).timeout(100000).userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31").get();
+    		Elements els = doc.select("div[class=row product-listing] h1 a");
+    		String url = "";
+    		for(Element el : els)
+    		{
+    			System.out.println(el);
+    			url += "https://www.adafruit.com" + el.attr("href") + "\r\n";
+    		}
+    		contentToTxt("d:/" + br2.readLine() + ".txt",url);
+    	}
+    }
+    
+    @Override
+    public void visit(Page page, CrawlDatums next) {
+    	String doc = page.getDoc().toString();
+    	System.out.println(doc);
+    	contentToHtml("d:/sensors.html",doc);
+    }
+
+    public static void main(String[] args) throws Exception {
+    	/*SensorCrawler1 crawler = new SensorCrawler1("crawler", false);
+        crawler.setThreads(1);
+        crawler.addSeed("https://www.adafruit.com/category/112");
+        crawler.start(1);*/
+        
+    	/*categoryCrawl("d:/sensors.html");*/
+    	
+    	/*urlCrawl("d:/urls.txt", "d:/names.txt");*/
+    	
+    	String filename = "COMPUTERS";
+    	File f = new File("d:/" + filename + ".txt");
+    	@SuppressWarnings("resource")
+		BufferedReader br = new BufferedReader(new FileReader(f));
+    	String line = null;
+    	while((line = br.readLine()) != null)
+    	{
+    		contentcrawl(line, "d:/" + filename + " sensors.txt");
+    	}
+    }
+
+}
