@@ -1,0 +1,22 @@
+package other;
+
+public class Power {
+	public double Power(double base, int exponet){
+		if(exponet == 0){
+			return 0;
+		}else if( exponet > 0){
+			int res = 1;
+			for(int i = 0; i < exponet; i++){
+				res *= base;
+			}
+			return res;
+		}else{
+			exponet = - exponet;
+			for(int i = 0; i < exponet; i++){
+				res *= base;
+			}
+			return (1.0/res);
+		}
+		
+	}
+}
