@@ -1,0 +1,46 @@
+package Sort;
+
+public class heapSort2 {
+	public static void maxify (int[] arr, int len, int k) {
+		int temp = arr[k];
+		for (int i = 2*k+1; i < len-1; i = 2*i+1) {
+			if (i < len-1 && arr[i] < arr[i+1]) {
+				i++;
+			}
+			if (temp >= arr[i]) {
+				break;
+			}else {
+				arr[k] = arr[i];
+				k = i;
+			}
+		}
+		arr[k] = temp;
+	}
+	public static void buildMaxHeap (int[] arr) {
+		int len = arr.length;
+		int m = len/2;
+		for (int i = m; i >= 0; i--) {
+			maxify(arr, len, i);
+		}
+	}
+	
+	public static void heapSort (int[] arr) {
+		buildMaxHeap(arr);
+		int len = arr.length;
+		for (int i = len-1; i >= 0; i--) {
+			int temp = arr[0];
+			arr[0] = arr[i];
+			arr[i] = temp;
+			len--;
+			maxify(arr, len, 0);
+		}
+	}
+	
+	public static void main (String[] args) {
+		int[] arr = {2,4,6,8,9,7,5,3,1};
+		heapSort2.heapSort(arr);
+		for(int i = 0; i < 9; i++){
+			System.out.print(arr[i]+"  ");
+		}
+	}
+}
