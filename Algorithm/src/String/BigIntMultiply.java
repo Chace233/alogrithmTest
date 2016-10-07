@@ -68,6 +68,6 @@ public class BigIntMultiply {
 	}
 	
 	public static void main(String[] args){
-		System.out.println(BigIntMultiply.bigIntMultiply("1234", "5678", 4));
+		System.out.println(BigIntMultiply.bigIntMultiply("12345678", "12345678", 8));
 	}
 }

@@ -1,0 +1,68 @@
+package other;
+
+import java.util.Scanner;
+
+public class Knapsack {
+	public static int[][] knapsackProblem (int n, int m, int[] w, int[] p) {
+		int[][] c = new int[n+1][m+1]; //c[i][m]表示前i个物品恰放入一个重量为m的背包中可获得最大的价值量
+		int i, j;
+		for (i = 0; i < n; i++) {
+			c[i][0] = 0;
+		}
+		for (j = 0; j < m; j++) {
+			c[0][j] = 0;
+		}
+		
+		for (i = 1; i < n+1; i++) {
+			for (j = 1; j < m+1; j++) {
+				if (w[i-1] <= j) {
+					if (c[i-1][w[i-1]] < c[i-1][j-w[i-1]]+p[i-1]) {
+						c[i][j] = c[i-1][j-w[i-1]] + p[i-1];
+					}else {
+						c[i][j] = c[i-1][j-w[i-1]];
+					}
+				} else {
+					c[i][j] = c[i-1][j];
+				}
+			}
+		}
+		return c;
+	}
+	
+	public static void printKnapsack (int n, int m, int[][] c, int[] w) {
+		int[] k = new int[n];
+		for (int i = n; i > 0; i--) {
+			if (c[i][m] > c[i-1][m]) {
+				k[i-1] = 1;
+				m -= w[i-1];
+			} else {
+				k[i-1] = 0;
+			}
+		}
+		
+		for (int i = 0; i < n; i++){
+			System.out.print(k[i] + "  ");
+		}
+	}
+	
+	public static void main (String[] args) {
+		int n = 0, m = 0;
+		Scanner in = new Scanner(System.in);
+		n = in.nextInt();
+		m = in.nextInt();
+		int[] w = new int[n];
+		int[] p = new int[n];
+		for (int i = 0; i < n; i++) {
+			w[i] = in.nextInt();
+			p[i] = in.nextInt();
+		}
+		int[][] c = Knapsack.knapsackProblem(n, m, w, p);
+		for (int i = 0; i < c.length; i++) {
+			for (int j = 0; j < c[0].length; j++){
+				System.out.print(c[i][j]+"  ");
+			}
+			System.out.println();
+		}
+		Knapsack.printKnapsack(n, m, c, w);
+	}
+}

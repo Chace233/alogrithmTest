@@ -1,0 +1,56 @@
+package other;
+
+public class NumberOf1From1ToN {
+	public static int count(int n){
+	    if(n<1)
+	        return 0;
+	    int count = 0;
+	    int base = 1;
+	    int round = n;
+	    while(round>0){
+	        int weight = round%10;
+	        round/=10;
+	        count += round*base;
+	        if(weight==1)
+	            count+=(n%base)+1;
+	        else if(weight>1)
+	            count+=base;
+	        base*=10;
+	    }
+	    return count;
+	}
+	
+	public static int NumberOf1 (String n) {
+		String first = n.charAt(0) + "";
+		int firstNum = Integer.parseInt(first);
+		int firstNumDigit = 0;
+		if (firstNum > 1) {
+			firstNumDigit = power10(n);
+		}else if (firstNum == 1) {
+			firstNumDigit = Integer.parseInt(n.substring(1));
+		}
+		
+		int otherNumDigit = firstNum * (n.length()-1) * power10(n.substring(1));
+		
+		int numrecursive = NumberOf1(n.substring(1));
+		
+		return firstNumDigit+otherNumDigit+numrecursive;
+	}
+	
+	public static int power10 (String n) {
+		int len = n.length();
+		int count = 1;
+		while (len >= 0) {
+			count *= 10;
+			len --;
+		}
+		return count;
+	}
+	
+	public static void main (String[] args) {
+		int n = 534;
+		String m = "21345";
+		int count = NumberOf1From1ToN.NumberOf1(m);
+		System.out.print(count);
+	}
+}

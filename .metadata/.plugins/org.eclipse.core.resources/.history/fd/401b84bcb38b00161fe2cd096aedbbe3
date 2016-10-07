@@ -1,0 +1,68 @@
+package String;
+
+public class BigIntMultiply2 {
+	private final static int SIZE = 4;
+	public static String BigIntMultiply(String str1, String str2, int len){
+		if(len <= SIZE){
+			return (""+Integer.parseInt(str1)*Integer.parseInt(str2));
+		}
+		
+		str1 = formatNumber(str1, len);
+		str2 = formatNumber(str2, len);
+		
+		int len1 = len/2;
+		int len2 = len - len1;
+		int lenm = Math.max(len1, len2);
+		
+		String A = str1.substring(0, len1);
+		String B = str1.substring(len1);
+		String C = str2.substring(0, len1);
+		String D = str2.substring(len1);
+		
+		String AC = BigIntMultiply(A, C, len1);
+		String BD = BigIntMultiply(B, D, len2);
+		String AD = BigIntMultiply(A, D, lenm);
+		String BC = BigIntMultiply(B, C, lenm);
+		
+		String ADBC = addAction(AD, BC);
+		
+		String[] sBD = dealStr(BD, len1);
+		if(!"0".equals(sBD[1])){
+			ADBC = addAction(ADBC, sBD[1]);
+		}
+		String[] sADBC = dealStr(ADBC, lenm);
+		if(!"0".equals(sADBC[1])){
+			AC = addAction(AC, sADBC[1]);
+		}
+		
+		return AC+sADBC[0]+sBD[0];
+	}
+	
+	public static String[] dealStr(String s, int len){
+		String[] res = {s, "0"};
+		if(s.length() > len){
+			res[0] = s.substring(0, len);
+			res[1] = s.substring(len);
+		}
+		return res;
+	}
+	
+	public static String addAction(String AD, String BC){
+		String ADBC = ""+(Integer.parseInt(AD)+Integer.parseInt(BC));
+		return ADBC;
+	}
+	
+	public static String formatNumber(String s, int len){
+		int lens = s.length();
+		if(lens < len){
+			for(int i = 0; i < (len-lens); i++){
+				s = "0"+s;
+			}
+		}
+		return s;
+	}
+	
+	public static void main(String[] args){
+		System.out.println(BigIntMultiply2.BigIntMultiply("12345678", "12345678", 8));
+	}
+}
